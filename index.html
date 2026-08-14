@@ -1,0 +1,1558 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Nounou">
+
+<!-- Icônes Apple Touch (iPhone/iPad) -->
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="apple-touch-icon" sizes="120x120" href="apple-touch-icon-120.png">
+<link rel="apple-touch-icon" sizes="152x152" href="apple-touch-icon-152.png">
+<link rel="apple-touch-icon" sizes="167x167" href="apple-touch-icon-167.png">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+
+<!-- Favicons -->
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+<meta name="theme-color" content="#ffffff">
+<title>Chez Nounou — carnet de pointage</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;600;700;800&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper: #ffffff;
+  --card: #ffffff;
+  --ink: #16161a;
+  --graphite: #2a2a30;
+  --muted: #8e8e96;
+  --faint: #c2c2c8;
+  --line: #ebebee;
+  --line-soft: #f4f4f6;
+  --lou: #2e7df0;
+  --lou-soft: #eaf2fe;
+  --rose: #e4322b;
+  --rose-soft: #fdeceb;
+  --danger: #e4322b;
+  --shadow: none;
+  --radius: 22px;
+  --radius-sm: 14px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'Archivo', -apple-system, sans-serif;
+  font-size: 15px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
+}
+body {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: env(safe-area-inset-top) 0 calc(88px + env(safe-area-inset-bottom));
+  min-height: 100vh;
+  position: relative;
+}
+/* grain discret sur tout l'écran */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+.mono { font-family: 'Spline Sans Mono', monospace; font-variant-numeric: tabular-nums; }
+
+/* chiffres géants, façon plaque extrudée */
+.display {
+  font-family: 'Anton', 'Archivo', sans-serif;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  line-height: 0.86;
+  color: var(--graphite);
+  text-shadow:
+    1px 1px 0 #d9d9de, 2px 2px 0 #d2d2d8, 3px 3px 0 #cbcbd2,
+    4px 4px 0 #c4c4cc, 5px 5px 0 #bdbdc6, 6px 6px 10px rgba(22,22,26,0.14);
+}
+.label {
+  font-family: 'Spline Sans Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* ---------- BANDEAU APERÇU ---------- */
+.preview-banner {
+  display: none;
+  background: var(--ink);
+  color: #fff;
+  text-align: center;
+  font-family: 'Spline Sans Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  padding: 8px 12px;
+  position: relative;
+  z-index: 2;
+}
+body.preview .preview-banner { display: block; }
+
+/* ---------- HEADER ---------- */
+header {
+  padding: 30px 22px 18px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  position: relative;
+  z-index: 2;
+}
+.eyebrow {
+  font-family: 'Spline Sans Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin-bottom: 6px;
+}
+h1 {
+  font-family: 'Anton', sans-serif;
+  font-weight: 400;
+  font-size: 38px;
+  line-height: 0.9;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+h1 em { font-style: normal; }
+.sync {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Spline Sans Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--faint);
+  padding-top: 6px;
+}
+.sync-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--faint); }
+.sync.on .sync-dot { background: #1fb45a; }
+.sync.on { color: #1fb45a; }
+
+/* ---------- SECTIONS ---------- */
+main { padding: 6px 18px 0; position: relative; z-index: 2; }
+.tabpage { display: none; }
+.tabpage.active { display: block; }
+.section-label {
+  font-family: 'Spline Sans Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 26px 2px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.section-label:first-child { margin-top: 8px; }
+.section-label .hint { letter-spacing: 0.08em; color: var(--faint); }
+
+/* ---------- CARTES ENFANT ---------- */
+.punch-grid { display: flex; flex-direction: column; gap: 14px; }
+.punch-card {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 20px 20px 18px;
+  position: relative;
+  overflow: hidden;
+}
+.punch-card.lou { background: var(--lou-soft); }
+.punch-card.rose { background: var(--rose-soft); }
+.punch-card::before { display: none; }
+.child-name {
+  font-family: 'Anton', sans-serif;
+  font-size: 20px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+.punch-card.lou .child-name { color: var(--lou); }
+.punch-card.rose .child-name { color: var(--rose); }
+.child-sub {
+  font-family: 'Spline Sans Mono', monospace;
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 5px;
+  min-height: 16px;
+}
+.school-toggle {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--lou);
+  background: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.school-toggle input { width: 18px; height: 18px; accent-color: var(--lou); flex-shrink: 0; }
+.school-hours {
+  font-family: 'Spline Sans Mono', monospace;
+  font-weight: 400;
+  font-size: 9.5px;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  display: block;
+  text-transform: uppercase;
+}
+.child-today {
+  font-family: 'Anton', sans-serif;
+  font-size: 76px;
+  line-height: 0.82;
+  letter-spacing: -0.03em;
+  color: var(--graphite);
+  margin: 18px 0 20px;
+  text-shadow:
+    1px 1px 0 #d9d9de, 2px 2px 0 #d2d2d8, 3px 3px 0 #cbcbd2,
+    4px 4px 0 #c4c4cc, 5px 5px 0 #bdbdc6, 6px 6px 10px rgba(22,22,26,0.13);
+}
+.child-today .unit {
+  font-family: 'Archivo', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--muted);
+  text-shadow: none;
+  letter-spacing: 0;
+}
+.punch-btn {
+  width: 100%;
+  border: none;
+  border-radius: 100px;
+  padding: 15px 0;
+  font-family: 'Archivo', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: transform 0.08s ease;
+  color: #fff;
+}
+.punch-btn:active:not(:disabled) { transform: scale(0.97); }
+.punch-btn:disabled { opacity: 0.35; cursor: default; }
+.punch-card.lou .punch-btn { background: var(--lou); }
+.punch-card.rose .punch-btn { background: var(--rose); }
+.punch-btn.out { background: #fff !important; }
+.punch-card.lou .punch-btn.out { color: var(--lou); }
+.punch-card.rose .punch-btn.out { color: var(--rose); }
+.running-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Spline Sans Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+.running-pill::before {
+  content: '';
+  width: 6px; height: 6px; border-radius: 50%;
+  background: currentColor;
+  animation: pulse 1.6s ease-in-out infinite;
+}
+.punch-card.lou .running-pill { color: var(--lou); }
+.punch-card.rose .running-pill { color: var(--rose); }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.2; } }
+@media (prefers-reduced-motion: reduce) { .running-pill::before { animation: none; } }
+
+/* ---------- LISTE CRÉNEAUX ---------- */
+.session-list { display: flex; flex-direction: column; gap: 2px; }
+.session-row {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  padding: 14px 2px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+}
+.session-row:active { background: var(--line-soft); }
+.session-chip { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.session-chip.lou { background: var(--lou); }
+.session-chip.rose { background: var(--rose); }
+.session-times {
+  font-family: 'Spline Sans Mono', monospace;
+  font-size: 14px;
+  flex: 1;
+  color: var(--ink);
+}
+.session-times .arrow { color: var(--faint); margin: 0 5px; }
+.session-times .open { color: var(--muted); font-family: 'Archivo', sans-serif; font-style: italic; }
+.session-dur {
+  font-family: 'Archivo', sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--graphite);
+}
+.empty-note {
+  text-align: center;
+  color: var(--faint);
+  padding: 26px 0 10px;
+  font-family: 'Spline Sans Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* ---------- SEMAINE ---------- */
+.week-card { background: transparent; border: none; border-radius: 0; padding: 0; }
+.week-totals { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 14px; margin-bottom: 6px; }
+.wt-name {
+  font-family: 'Anton', sans-serif;
+  font-size: 15px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.wt-name.lou { color: var(--lou); }
+.wt-name.rose { color: var(--rose); }
+.wt-val {
+  font-family: 'Anton', sans-serif;
+  font-size: 54px;
+  line-height: 0.85;
+  letter-spacing: -0.03em;
+  color: var(--graphite);
+  text-shadow:
+    1px 1px 0 #d9d9de, 2px 2px 0 #d2d2d8, 3px 3px 0 #cbcbd2,
+    4px 4px 8px rgba(22,22,26,0.12);
+}
+.wt-val .unit {
+  font-family: 'Archivo', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--muted);
+  text-shadow: none;
+}
+.ruler-scale {
+  display: flex;
+  justify-content: space-between;
+  font-family: 'Spline Sans Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  color: var(--faint);
+  padding: 0 0 4px;
+  margin-top: 26px;
+  border-bottom: 1px solid var(--line);
+}
+.day-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 0;
+  cursor: pointer;
+  border-bottom: 1px solid var(--line-soft);
+}
+.day-row:active { background: var(--line-soft); }
+.day-name {
+  font-family: 'Spline Sans Mono', monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  width: 36px;
+  flex-shrink: 0;
+  text-align: right;
+}
+.day-name.today { color: var(--ink); font-weight: 600; }
+.day-name .school-dot {
+  display: inline-block;
+  width: 4px; height: 4px; border-radius: 50%;
+  background: var(--lou);
+  vertical-align: middle;
+  margin-left: 3px;
+}
+.track { flex: 1; position: relative; height: 20px; }
+.track::before {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; top: 50%;
+  height: 1px;
+  background: var(--line);
+}
+.track .tick { position: absolute; top: 3px; bottom: 3px; width: 1px; background: var(--line); }
+.seg { position: absolute; height: 7px; border-radius: 4px; }
+.seg.lou { background: var(--lou); top: 1px; }
+.seg.rose { background: var(--rose); top: 12px; }
+.seg.open-end { opacity: 0.45; }
+.day-total {
+  font-family: 'Archivo', sans-serif;
+  font-weight: 700;
+  font-size: 11px;
+  width: 60px;
+  flex-shrink: 0;
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.35;
+}
+.day-total .dt.lou { color: var(--lou); }
+.day-total .dt.rose { color: var(--rose); }
+.day-total .dt.zero { color: var(--faint); font-weight: 400; }
+
+/* ---------- HISTORIQUE ---------- */
+.avg-card {
+  background: var(--ink);
+  color: #fff;
+  border-radius: var(--radius);
+  padding: 22px 20px;
+  margin-bottom: 22px;
+}
+.avg-title {
+  font-family: 'Anton', sans-serif;
+  font-size: 17px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+  font-style: normal;
+}
+.avg-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.avg-cell .avg-label {
+  font-family: 'Spline Sans Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0.5;
+  margin-bottom: 8px;
+}
+.avg-cell .avg-child { display: flex; justify-content: space-between; align-items: baseline; padding: 5px 0; }
+.avg-cell .avg-child + .avg-child { border-top: 1px solid rgba(255,255,255,0.12); }
+.avg-name {
+  font-family: 'Anton', sans-serif;
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.avg-name.lou { color: #7fb2f8; }
+.avg-name.rose { color: #f5847e; }
+.avg-val { font-family: 'Archivo', sans-serif; font-weight: 700; font-size: 15px; }
+.week-item {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  padding: 16px 2px;
+  margin-bottom: 0;
+}
+.week-item-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; }
+.week-item-title {
+  font-family: 'Anton', sans-serif;
+  font-size: 15px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.week-item-badge {
+  font-family: 'Spline Sans Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+.week-bars { display: flex; flex-direction: column; gap: 8px; }
+.wbar-row { display: flex; align-items: center; gap: 11px; }
+.wbar-name {
+  font-family: 'Anton', sans-serif;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  width: 38px;
+}
+.wbar-name.lou { color: var(--lou); }
+.wbar-name.rose { color: var(--rose); }
+.wbar-track { flex: 1; height: 9px; border-radius: 5px; background: var(--line-soft); overflow: hidden; }
+.wbar-fill { height: 100%; border-radius: 5px; }
+.wbar-fill.lou { background: var(--lou); }
+.wbar-fill.rose { background: var(--rose); }
+.wbar-val {
+  font-family: 'Archivo', sans-serif;
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--graphite);
+  width: 60px;
+  text-align: right;
+}
+
+/* ---------- BOUTON AJOUT ---------- */
+.add-btn {
+  display: block;
+  width: 100%;
+  margin: 22px 0 10px;
+  padding: 15px;
+  background: transparent;
+  border: 1.5px solid var(--line);
+  border-radius: 100px;
+  color: var(--muted);
+  font-family: 'Archivo', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.add-btn:active { background: var(--line-soft); }
+
+/* ---------- NAV ---------- */
+nav.tabs {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  max-width: 640px;
+  margin: 0 auto;
+  background: rgba(255,255,255,0.94);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-top: 1px solid var(--line);
+  display: flex;
+  padding-bottom: env(safe-area-inset-bottom);
+  z-index: 3;
+}
+.tab-btn {
+  flex: 1;
+  background: none;
+  border: none;
+  padding: 12px 0 10px;
+  font-family: 'Spline Sans Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--faint);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+.tab-btn svg { width: 21px; height: 21px; stroke: currentColor; }
+.tab-btn.active { color: var(--ink); }
+
+/* ---------- MODALES ---------- */
+.modal-bg {
+  position: fixed;
+  inset: 0;
+  background: rgba(22,22,26,0.4);
+  display: none;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 50;
+}
+.modal-bg.open { display: flex; }
+.modal {
+  background: #fff;
+  width: 100%;
+  max-width: 640px;
+  border-radius: 26px 26px 0 0;
+  padding: 26px 22px calc(26px + env(safe-area-inset-bottom));
+  max-height: 86vh;
+  overflow-y: auto;
+}
+.modal h2 {
+  font-family: 'Anton', sans-serif;
+  font-weight: 400;
+  font-size: 26px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  margin-bottom: 20px;
+  color: var(--ink);
+}
+.field { margin-bottom: 16px; }
+.field label, .field .flabel, .time-cell .tlabel {
+  display: block;
+  font-family: 'Spline Sans Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.field input[type="date"] {
+  width: 100%;
+  padding: 13px 14px;
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: #fff;
+  font-family: 'Spline Sans Mono', monospace;
+  font-size: 16px;
+  color: var(--ink);
+  -webkit-appearance: none;
+  appearance: none;
+}
+.time-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.time-inputs { display: flex; align-items: center; gap: 5px; }
+.time-inputs select {
+  flex: 1;
+  min-width: 0;
+  padding: 13px 4px;
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: #fff;
+  font-family: 'Spline Sans Mono', monospace;
+  font-size: 16px;
+  color: var(--ink);
+  text-align: center;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.time-inputs select:disabled { opacity: 0.35; }
+.time-inputs .colon { color: var(--faint); font-family: 'Spline Sans Mono', monospace; font-size: 12px; }
+.field :focus { outline: 2px solid var(--ink); outline-offset: 1px; }
+.seg-toggle { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.seg-opt {
+  padding: 14px 0;
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: #fff;
+  font-family: 'Anton', sans-serif;
+  font-size: 15px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--faint);
+  cursor: pointer;
+  text-align: center;
+}
+.seg-opt.sel.lou { border-color: var(--lou); color: #fff; background: var(--lou); }
+.seg-opt.sel.rose { border-color: var(--rose); color: #fff; background: var(--rose); }
+.modal-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 24px; }
+.btn-primary {
+  padding: 16px;
+  border: none;
+  border-radius: 100px;
+  background: var(--ink);
+  color: #fff;
+  font-family: 'Archivo', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.btn-ghost {
+  padding: 13px;
+  border: none;
+  background: none;
+  color: var(--muted);
+  font-family: 'Archivo', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.btn-danger {
+  padding: 13px;
+  border: none;
+  background: none;
+  color: var(--danger);
+  font-family: 'Archivo', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.form-error { color: var(--danger); font-size: 13px; font-weight: 600; margin-top: 8px; display: none; }
+.form-error.show { display: block; }
+.day-school-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 6px 0 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--lou);
+  background: var(--lou-soft);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 13px 14px;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.day-school-toggle input { width: 18px; height: 18px; accent-color: var(--lou); }
+
+/* ---------- TOAST ---------- */
+.toast {
+  position: fixed;
+  bottom: calc(100px + env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink);
+  color: #fff;
+  padding: 12px 20px;
+  border-radius: 100px;
+  font-size: 12.5px;
+  font-weight: 500;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s, transform 0.25s;
+  z-index: 60;
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  white-space: nowrap;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: auto; }
+.toast button {
+  background: none;
+  border: none;
+  color: #f5847e;
+  font-family: 'Archivo', sans-serif;
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+</style>
+</head>
+<body>
+
+<div class="preview-banner">APERÇU · DONNÉES FICTIVES · RIEN N'EST ENREGISTRÉ</div>
+
+<header>
+  <div>
+    <div class="eyebrow">Carnet de pointage</div>
+    <h1>Chez <em>Nounou</em></h1>
+  </div>
+  <div class="sync" id="sync"><span class="sync-dot"></span><span id="sync-txt">hors ligne</span></div>
+</header>
+
+<main>
+
+  <!-- ======== POINTAGE ======== -->
+  <div class="tabpage active" id="page-pointage">
+    <div class="section-label"><span id="today-label">Aujourd'hui</span></div>
+    <div class="punch-grid">
+      <div class="punch-card rose">
+        <div class="child-name">Rose</div>
+        <div class="child-sub" id="rose-sub"></div>
+        <div class="child-today" id="rose-today">0<span class="unit"> MIN</span></div>
+        <button class="punch-btn" id="rose-btn"></button>
+      </div>
+      <div class="punch-card lou">
+        <div class="child-name">Lou</div>
+        <div class="child-sub" id="lou-sub"></div>
+        <label class="school-toggle">
+          <input type="checkbox" id="lou-school">
+          <span>Jour d'école<span class="school-hours">école 8h35 → 16h30</span></span>
+        </label>
+        <div class="child-today" id="lou-today">0<span class="unit"> MIN</span></div>
+        <button class="punch-btn" id="lou-btn"></button>
+      </div>
+    </div>
+
+    <div class="section-label"><span>Créneaux du jour</span><span class="hint">toucher pour corriger</span></div>
+    <div class="session-list" id="today-sessions"></div>
+    <button class="add-btn" id="add-today">Ajouter un créneau</button>
+  </div>
+
+  <!-- ======== SEMAINE ======== -->
+  <div class="tabpage" id="page-semaine">
+    <div class="section-label"><span id="week-label"></span></div>
+    <div class="week-card">
+      <div class="week-totals">
+        <div>
+          <div class="wt-name lou">Lou</div>
+          <div class="wt-val" id="week-lou">—</div>
+        </div>
+        <div>
+          <div class="wt-name rose">Rose</div>
+          <div class="wt-val" id="week-rose">—</div>
+        </div>
+      </div>
+      <div class="ruler-scale"><span>7h</span><span>10h</span><span>13h</span><span>16h</span><span>19h</span></div>
+      <div id="week-days"></div>
+    </div>
+    <button class="add-btn" id="add-week">Ajouter un créneau</button>
+  </div>
+
+  <!-- ======== HISTORIQUE ======== -->
+  <div class="tabpage" id="page-histo">
+    <div class="avg-card">
+      <div class="avg-title">Moyennes hebdo</div>
+      <div class="avg-grid">
+        <div class="avg-cell">
+          <div class="avg-label">4 dern. semaines</div>
+          <div class="avg-child"><span class="avg-name lou">Lou</span><span class="avg-val" id="avg4-lou">—</span></div>
+          <div class="avg-child"><span class="avg-name rose">Rose</span><span class="avg-val" id="avg4-rose">—</span></div>
+        </div>
+        <div class="avg-cell">
+          <div class="avg-label">Depuis le début</div>
+          <div class="avg-child"><span class="avg-name lou">Lou</span><span class="avg-val" id="avgall-lou">—</span></div>
+          <div class="avg-child"><span class="avg-name rose">Rose</span><span class="avg-val" id="avgall-rose">—</span></div>
+        </div>
+      </div>
+    </div>
+    <div id="weeks-list"></div>
+  </div>
+
+</main>
+
+<nav class="tabs">
+  <button class="tab-btn active" data-tab="pointage">
+    <svg fill="none" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6"/></svg>
+    Pointage
+  </button>
+  <button class="tab-btn" data-tab="semaine">
+    <svg fill="none" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+    Semaine
+  </button>
+  <button class="tab-btn" data-tab="histo">
+    <svg fill="none" stroke-width="1.8" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 4-6"/></svg>
+    Historique
+  </button>
+</nav>
+
+<!-- ======== MODALE ÉDITION / AJOUT ======== -->
+<div class="modal-bg" id="modal-bg">
+  <div class="modal">
+    <h2 id="modal-title">Ajouter un créneau</h2>
+    <div class="field">
+      <span class="flabel">Enfant</span>
+      <div class="seg-toggle">
+        <button class="seg-opt lou" data-child="lou">Lou</button>
+        <button class="seg-opt rose" data-child="rose">Rose</button>
+      </div>
+    </div>
+    <div class="field">
+      <label for="f-date">Date</label>
+      <input type="date" id="f-date">
+    </div>
+    <label class="day-school-toggle" id="f-school-wrap">
+      <input type="checkbox" id="f-school">
+      <span>Jour d'école pour Lou<span class="school-hours">le créneau sera coupé de 8h35 à 16h30</span></span>
+    </label>
+    <div class="field">
+      <div class="time-pair">
+        <div class="time-cell">
+          <span class="tlabel">Arrivée</span>
+          <div class="time-inputs">
+            <select id="f-start-h"></select><span class="colon">h</span><select id="f-start-m"></select>
+          </div>
+        </div>
+        <div class="time-cell">
+          <span class="tlabel">Départ</span>
+          <div class="time-inputs">
+            <select id="f-end-h"></select><span class="colon">h</span><select id="f-end-m"></select>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="form-error" id="f-error"></div>
+    <div class="modal-actions">
+      <button class="btn-primary" id="f-save">Enregistrer</button>
+      <button class="btn-danger" id="f-delete" style="display:none">Supprimer ce créneau</button>
+      <button class="btn-ghost" id="f-cancel">Annuler</button>
+    </div>
+  </div>
+</div>
+
+<!-- ======== MODALE JOUR ======== -->
+<div class="modal-bg" id="day-bg">
+  <div class="modal">
+    <h2 id="day-title"></h2>
+    <label class="day-school-toggle">
+      <input type="checkbox" id="day-school">
+      <span>Jour d'école pour Lou</span>
+    </label>
+    <div class="session-list" id="day-sessions"></div>
+    <div class="modal-actions">
+      <button class="btn-primary" id="day-add">Ajouter un créneau</button>
+      <button class="btn-ghost" id="day-close">Fermer</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"><span id="toast-msg"></span><button id="toast-undo" style="display:none">Annuler</button></div>
+
+<script type="module">
+/* ============================ HELPERS (avant données) ============================ */
+const pad = n => String(n).padStart(2, "0");
+const todayStr = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+};
+const toMin = t => { const [h, m] = t.split(":").map(Number); return h * 60 + m; };
+const fromMin = m => `${pad(Math.floor(m/60))}:${pad(m%60)}`;
+const round5 = t => fromMin(Math.min(24*60 - 5, Math.round(toMin(t)/5)*5));
+const nowTime = () => { const d = new Date(); return `${pad(d.getHours())}:${pad(d.getMinutes())}`; };
+const now5 = () => round5(nowTime());
+
+const SCHOOL_START = "08:35", SCHOOL_END = "16:30";
+
+/* ============================ ÉTAT ============================ */
+const state = {
+  sessions: [],        // {id, child:'lou'|'rose', date:'YYYY-MM-DD', start:'HH:MM', end:'HH:MM'|null}
+  schoolDays: new Set(), // dates 'YYYY-MM-DD' cochées jour d'école
+  tab: "pointage",
+  editingId: null,
+  modalChild: "rose",
+};
+let pendingDelete = null;
+let capping = false;
+
+/* ==DATA-LAYER-START== */
+/* =====================================================================
+   CONFIG FIREBASE
+   ⚠️ Colle ici EXACTEMENT le même bloc firebaseConfig que dans
+   l'index.html de Diversif (complète appId s'il y figure).
+   ===================================================================== */
+const firebaseConfig = {
+  apiKey: "AIzaSyC7sZDCVP-r34T33L6nEwWzibsrXnxletA",
+  authDomain: "diversif-bebe.firebaseapp.com",
+  projectId: "diversif-bebe",
+};
+const JOURNAL_ID = "journal-7rkwbmzT"; // même famille que Diversif
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+  getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, setDoc,
+  onSnapshot, query
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const sessionsCol = collection(db, "nounou", JOURNAL_ID, "sessions");
+const schoolCol = collection(db, "nounou", JOURNAL_ID, "schooldays");
+
+onSnapshot(query(sessionsCol), snap => {
+  state.sessions = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  setSynced();
+  maybeAutoCap();
+  render();
+}, err => {
+  console.error("Firestore:", err);
+  document.getElementById("sync-txt").textContent = "erreur sync";
+});
+onSnapshot(query(schoolCol), snap => {
+  state.schoolDays = new Set(snap.docs.filter(d => d.data().school).map(d => d.id));
+  setSynced();
+  maybeAutoCap();
+  render();
+});
+
+async function createSession(data) { await addDoc(sessionsCol, data); }
+async function saveSession(id, data) { await updateDoc(doc(sessionsCol, id), data); }
+async function removeSession(id) { await deleteDoc(doc(sessionsCol, id)); }
+async function restoreSession(data) {
+  const { id, ...rest } = data;
+  await setDoc(doc(sessionsCol, id), rest);
+}
+async function setSchoolDay(date, val) {
+  await setDoc(doc(schoolCol, date), { school: !!val });
+}
+/* ==DATA-LAYER-END== */
+
+function setSynced() {
+  document.getElementById("sync").classList.add("on");
+  document.getElementById("sync-txt").textContent = "synchronisé";
+}
+
+/* ============================ CALCULS ============================ */
+function sessionMinutes(s) {
+  if (!s.end) {
+    if (s.date !== todayStr()) return 0;
+    return Math.max(0, toMin(nowTime()) - toMin(s.start));
+  }
+  return Math.max(0, toMin(s.end) - toMin(s.start));
+}
+function fmtDur(min) {
+  min = Math.round(min);
+  const h = Math.floor(min / 60), m = min % 60;
+  if (h === 0) return `${m} min`;
+  return `${h} h ${pad(m)}`;
+}
+function fmtDurHTML(min) {
+  min = Math.round(min);
+  const h = Math.floor(min / 60), m = min % 60;
+  if (h === 0) return `${m}<span class="unit"> MIN</span>`;
+  return `${h}<span class="unit">H</span>${pad(m)}`;
+}
+function mondayOf(dateStr) {
+  const d = new Date(dateStr + "T12:00:00");
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+}
+function addDays(dateStr, n) {
+  const d = new Date(dateStr + "T12:00:00");
+  d.setDate(d.getDate() + n);
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+}
+const DAY_NAMES = ["lun", "mar", "mer", "jeu", "ven"];
+function fmtDateLong(dateStr) {
+  return new Date(dateStr + "T12:00:00").toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
+}
+function weekTitle(monday) {
+  const fri = addDays(monday, 4);
+  const m1 = new Date(monday + "T12:00:00"), m2 = new Date(fri + "T12:00:00");
+  const sameMonth = m1.getMonth() === m2.getMonth();
+  const d1 = sameMonth ? m1.getDate() : m1.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
+  const d2 = m2.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
+  return `Semaine du ${d1} au ${d2}`;
+}
+function sessionsOn(dateStr, child) {
+  return state.sessions
+    .filter(s => s.date === dateStr && (!child || s.child === child))
+    .sort((a, b) => a.start.localeCompare(b.start));
+}
+/* soir d'école : temps qui court depuis 16h30 tant que le départ
+   de Lou n'a pas été pointé (aucun créneau n'existe encore) */
+function louEveningVirtual(dateStr) {
+  if (dateStr !== todayStr()) return 0;
+  if (!state.schoolDays.has(dateStr)) return 0;
+  const now = toMin(nowTime());
+  if (now < toMin(SCHOOL_END)) return 0;
+  const eveningExists = sessionsOn(dateStr, "lou").some(s => toMin(s.start) >= toMin(SCHOOL_END));
+  if (eveningExists) return 0;
+  return now - toMin(SCHOOL_END);
+}
+function dayTotal(dateStr, child) {
+  let t = sessionsOn(dateStr, child).reduce((tt, s) => tt + sessionMinutes(s), 0);
+  if (child === "lou") t += louEveningVirtual(dateStr);
+  return t;
+}
+function weekTotal(monday, child) {
+  let t = 0;
+  for (let i = 0; i < 5; i++) t += dayTotal(addDays(monday, i), child);
+  return t;
+}
+function runningSession(child) {
+  return state.sessions.find(s => s.child === child && s.date === todayStr() && !s.end) || null;
+}
+
+/* ---- découpe d'un créneau de Lou autour des heures d'école ----
+   renvoie une liste de morceaux [[start,end], ...] ou null si le
+   créneau tombe entièrement pendant l'école */
+function splitAroundSchool(start, end) {
+  const S = toMin(SCHOOL_START), E = toMin(SCHOOL_END);
+  const a = toMin(start);
+  if (!end) {
+    if (a < S) return [[start, SCHOOL_START]];
+    if (a < E) return null;
+    return [[start, null]];
+  }
+  const b = toMin(end);
+  const parts = [];
+  if (a < S) parts.push([start, fromMin(Math.min(b, S))]);
+  if (b > E) parts.push([fromMin(Math.max(a, E)), end]);
+  return parts.length ? parts : null;
+}
+function needsSplit(s) {
+  if (s.child !== "lou") return false;
+  const S = toMin(SCHOOL_START), E = toMin(SCHOOL_END);
+  const a = toMin(s.start), b = s.end ? toMin(s.end) : a;
+  return b > S && a < E;
+}
+/* applique la découpe à tous les créneaux de Lou d'une date */
+async function applySchoolSplit(dateStr) {
+  const targets = sessionsOn(dateStr, "lou").filter(needsSplit);
+  let n = 0;
+  for (const s of targets) {
+    const parts = splitAroundSchool(s.start, s.end);
+    if (!parts) { await removeSession(s.id); n++; continue; }
+    await saveSession(s.id, { start: parts[0][0], end: parts[0][1] });
+    for (let k = 1; k < parts.length; k++) {
+      await createSession({ child: "lou", date: dateStr, start: parts[k][0], end: parts[k][1] });
+    }
+    n++;
+  }
+  return n;
+}
+
+/* ---- école : coupe automatique à 8h35 ---- */
+async function maybeAutoCap() {
+  if (capping) return;
+  if (!state.schoolDays.has(todayStr())) return;
+  const run = runningSession("lou");
+  if (run && toMin(run.start) < toMin(SCHOOL_START) && toMin(nowTime()) >= toMin(SCHOOL_START)) {
+    capping = true;
+    try { await saveSession(run.id, { end: SCHOOL_START }); }
+    finally { capping = false; }
+  }
+}
+
+/* ============================ RENDER ============================ */
+function render() {
+  renderPointage();
+  renderSemaine();
+  renderHisto();
+}
+
+function renderPointage() {
+  document.getElementById("today-label").textContent =
+    "Aujourd'hui — " + fmtDateLong(todayStr());
+
+  const school = state.schoolDays.has(todayStr());
+  document.getElementById("lou-school").checked = school;
+
+  /* ---- Rose : logique simple ---- */
+  {
+    const run = runningSession("rose");
+    const btn = document.getElementById("rose-btn");
+    const sub = document.getElementById("rose-sub");
+    document.getElementById("rose-today").innerHTML = fmtDurHTML(dayTotal(todayStr(), "rose"));
+    btn.disabled = false;
+    if (run) {
+      btn.textContent = "Départ";
+      btn.classList.add("out");
+      sub.innerHTML = `<span class="running-pill">chez Nounou depuis ${run.start}</span>`;
+    } else {
+      btn.textContent = "Arrivée";
+      btn.classList.remove("out");
+      sub.textContent = "";
+    }
+  }
+
+  /* ---- Lou : logique école ---- */
+  {
+    const run = runningSession("lou");
+    const btn = document.getElementById("lou-btn");
+    const sub = document.getElementById("lou-sub");
+    document.getElementById("lou-today").innerHTML = fmtDurHTML(dayTotal(todayStr(), "lou"));
+    btn.disabled = false;
+    const now = toMin(nowTime());
+
+    if (run) {
+      btn.textContent = "Départ";
+      btn.classList.add("out");
+      sub.innerHTML = `<span class="running-pill">chez Nounou depuis ${run.start}</span>`;
+    } else if (!school) {
+      btn.textContent = "Arrivée";
+      btn.classList.remove("out");
+      sub.textContent = "";
+    } else if (now < toMin(SCHOOL_START)) {
+      btn.textContent = "Arrivée";
+      btn.classList.remove("out");
+      sub.textContent = "avant l'école";
+    } else if (now < toMin(SCHOOL_END)) {
+      btn.textContent = "À l'école";
+      btn.classList.remove("out");
+      btn.disabled = true;
+      sub.textContent = "sortie à 16h30, récupérée par Nounou";
+    } else {
+      const eveningDone = sessionsOn(todayStr(), "lou")
+        .some(s => toMin(s.start) >= toMin(SCHOOL_END));
+      if (eveningDone) {
+        btn.textContent = "Arrivée";
+        btn.classList.remove("out");
+        sub.textContent = "";
+      } else {
+        btn.textContent = "Départ";
+        btn.classList.add("out");
+        sub.innerHTML = `<span class="running-pill">chez Nounou depuis 16:30 (école)</span>`;
+      }
+    }
+  }
+
+  const list = document.getElementById("today-sessions");
+  const sess = sessionsOn(todayStr());
+  list.innerHTML = "";
+  if (sess.length === 0) list.innerHTML = `<div class="empty-note">Aucun créneau aujourd'hui</div>`;
+  for (const s of sess) list.appendChild(sessionRow(s));
+}
+
+function sessionRow(s) {
+  const row = document.createElement("div");
+  row.className = "session-row";
+  const name = s.child === "lou" ? "Lou" : "Rose";
+  const end = s.end
+    ? `<span class="arrow">→</span>${s.end}`
+    : `<span class="arrow">→</span><span class="open">en cours</span>`;
+  row.innerHTML = `
+    <span class="session-chip ${s.child}"></span>
+    <span class="session-times">${name} · ${s.start}${end}</span>
+    <span class="session-dur">${fmtDur(sessionMinutes(s))}</span>`;
+  row.addEventListener("click", () => openEdit(s));
+  return row;
+}
+
+const TRACK_START = 7 * 60, TRACK_END = 19.5 * 60;
+function renderSemaine() {
+  const monday = mondayOf(todayStr());
+  document.getElementById("week-label").textContent = weekTitle(monday);
+  document.getElementById("week-lou").innerHTML = fmtDurHTML(weekTotal(monday, "lou"));
+  document.getElementById("week-rose").innerHTML = fmtDurHTML(weekTotal(monday, "rose"));
+
+  const cont = document.getElementById("week-days");
+  cont.innerHTML = "";
+  for (let i = 0; i < 5; i++) {
+    const dateStr = addDays(monday, i);
+    const row = document.createElement("div");
+    row.className = "day-row";
+    const isToday = dateStr === todayStr();
+    let segs = "";
+    for (const s of sessionsOn(dateStr)) {
+      const a = Math.max(TRACK_START, toMin(s.start));
+      const bRaw = s.end ? toMin(s.end) : (isToday ? toMin(nowTime()) : toMin(s.start) + 15);
+      const b = Math.min(TRACK_END, Math.max(a + 4, bRaw));
+      const left = ((a - TRACK_START) / (TRACK_END - TRACK_START)) * 100;
+      const width = ((b - a) / (TRACK_END - TRACK_START)) * 100;
+      segs += `<div class="seg ${s.child}${s.end ? "" : " open-end"}" style="left:${left}%;width:${width}%"></div>`;
+    }
+    // segment virtuel : soir d'école en cours (pas encore pointé)
+    const vm = louEveningVirtual(dateStr);
+    if (vm > 0) {
+      const a = toMin(SCHOOL_END);
+      const b = Math.min(TRACK_END, Math.max(a + 4, toMin(nowTime())));
+      const left = ((a - TRACK_START) / (TRACK_END - TRACK_START)) * 100;
+      const width = ((b - a) / (TRACK_END - TRACK_START)) * 100;
+      segs += `<div class="seg lou open-end" style="left:${left}%;width:${width}%"></div>`;
+    }
+    let ticks = "";
+    for (const t of [10 * 60, 13 * 60, 16 * 60]) {
+      ticks += `<div class="tick" style="left:${((t - TRACK_START) / (TRACK_END - TRACK_START)) * 100}%"></div>`;
+    }
+    const louT = dayTotal(dateStr, "lou");
+    const roseT = dayTotal(dateStr, "rose");
+    const schoolDot = state.schoolDays.has(dateStr) ? `<span class="school-dot" title="jour d'école"></span>` : "";
+    row.innerHTML = `
+      <span class="day-name${isToday ? " today" : ""}">${DAY_NAMES[i]}${schoolDot}</span>
+      <div class="track">${ticks}${segs}</div>
+      <span class="day-total">
+        <span class="dt lou${louT > 0 ? "" : " zero"}">${louT > 0 ? fmtDur(louT) : "·"}</span>
+        <span class="dt rose${roseT > 0 ? "" : " zero"}">${roseT > 0 ? fmtDur(roseT) : "·"}</span>
+      </span>`;
+    row.addEventListener("click", () => openDay(dateStr));
+    cont.appendChild(row);
+  }
+}
+
+function renderHisto() {
+  const currentMonday = mondayOf(todayStr());
+  const dates = state.sessions.map(s => s.date).sort();
+  const list = document.getElementById("weeks-list");
+  list.innerHTML = "";
+
+  if (dates.length === 0) {
+    list.innerHTML = `<div class="empty-note">Les semaines apparaîtront ici dès les premiers pointages</div>`;
+    for (const id of ["avg4-lou", "avg4-rose", "avgall-lou", "avgall-rose"])
+      document.getElementById(id).textContent = "—";
+    return;
+  }
+
+  const firstMonday = mondayOf(dates[0]);
+  const weeks = [];
+  let m = firstMonday;
+  while (m <= currentMonday) { weeks.push(m); m = addDays(m, 7); }
+  weeks.reverse();
+
+  const completed = weeks.filter(w => w !== currentMonday);
+  const avg = (arr, child) =>
+    arr.length ? arr.reduce((t, w) => t + weekTotal(w, child), 0) / arr.length : null;
+  const last4 = completed.slice(0, 4);
+  const setAvg = (id, v) =>
+    document.getElementById(id).textContent = v === null ? "—" : fmtDur(v);
+  setAvg("avg4-lou", avg(last4, "lou"));
+  setAvg("avg4-rose", avg(last4, "rose"));
+  setAvg("avgall-lou", avg(completed, "lou"));
+  setAvg("avgall-rose", avg(completed, "rose"));
+
+  let maxWeek = 40 * 60;
+  for (const w of weeks) for (const c of ["lou", "rose"])
+    maxWeek = Math.max(maxWeek, weekTotal(w, c));
+
+  for (const w of weeks) {
+    const item = document.createElement("div");
+    item.className = "week-item";
+    const isCurrent = w === currentMonday;
+    let bars = "";
+    for (const c of ["lou", "rose"]) {
+      const t = weekTotal(w, c);
+      bars += `
+        <div class="wbar-row">
+          <span class="wbar-name ${c}">${c === "lou" ? "Lou" : "Rose"}</span>
+          <div class="wbar-track"><div class="wbar-fill ${c}" style="width:${Math.min(100, (t / maxWeek) * 100)}%"></div></div>
+          <span class="wbar-val">${t > 0 ? fmtDur(t) : "0 h"}</span>
+        </div>`;
+    }
+    item.innerHTML = `
+      <div class="week-item-head">
+        <span class="week-item-title">${weekTitle(w)}</span>
+        <span class="week-item-badge">${isCurrent ? "en cours" : ""}</span>
+      </div>
+      <div class="week-bars">${bars}</div>`;
+    list.appendChild(item);
+  }
+}
+
+/* ============================ POINTAGE ============================ */
+async function punch(child) {
+  const run = runningSession(child);
+  const name = child === "lou" ? "Lou" : "Rose";
+
+  if (run) {
+    const t = now5();
+    await saveSession(run.id, { end: t });
+    toast(`Départ de ${name} à ${t}`);
+    return;
+  }
+
+  // cas école : bouton "Récupérée" pour Lou après 16h30
+  if (child === "lou" && state.schoolDays.has(todayStr())) {
+    const now = toMin(nowTime());
+    if (now >= toMin(SCHOOL_END)) {
+      const eveningDone = sessionsOn(todayStr(), "lou").some(s => toMin(s.start) >= toMin(SCHOOL_END));
+      if (!eveningDone) {
+        const t = now5();
+        await createSession({ child: "lou", date: todayStr(), start: SCHOOL_END, end: t });
+        toast(`Départ de Lou à ${t} (arrivée 16:30, sortie d'école)`);
+        return;
+      }
+    }
+  }
+
+  const t = now5();
+  await createSession({ child, date: todayStr(), start: t, end: null });
+  toast(`Arrivée de ${name} à ${t}`);
+}
+document.getElementById("lou-btn").addEventListener("click", () => punch("lou"));
+document.getElementById("rose-btn").addEventListener("click", () => punch("rose"));
+
+document.getElementById("lou-school").addEventListener("change", async e => {
+  await setSchoolDay(todayStr(), e.target.checked);
+  if (e.target.checked) {
+    const n = await applySchoolSplit(todayStr());
+    if (n) toast(`${n} créneau${n > 1 ? "x" : ""} de Lou coupé${n > 1 ? "s" : ""} pour l'école`);
+  }
+});
+
+/* ============================ MODALE ÉDITION ============================ */
+const modalBg = document.getElementById("modal-bg");
+
+/* ---- sélecteurs d'heure : une roue heures + une roue minutes (pas de 5) ---- */
+const fH = {
+  start: document.getElementById("f-start-h"),
+  end: document.getElementById("f-end-h"),
+};
+const fM = {
+  start: document.getElementById("f-start-m"),
+  end: document.getElementById("f-end-m"),
+};
+function fillHours(sel, withEmpty) {
+  sel.innerHTML = withEmpty ? `<option value="">—</option>` : "";
+  for (let h = 6; h <= 20; h++) sel.innerHTML += `<option value="${h}">${h}</option>`;
+}
+function fillMinutes(sel) {
+  sel.innerHTML = "";
+  for (let m = 0; m < 60; m += 5) sel.innerHTML += `<option value="${m}">${pad(m)}</option>`;
+}
+fillHours(fH.start, false); fillMinutes(fM.start);
+fillHours(fH.end, true);   fillMinutes(fM.end);
+
+function getFTime(which) {
+  const h = fH[which].value;
+  if (h === "") return null;
+  return `${pad(Number(h))}:${pad(Number(fM[which].value))}`;
+}
+function setFTime(which, value) {
+  if (!value) {
+    fH[which].value = "";
+    fM[which].value = "0";
+  } else {
+    const v = round5(value);
+    fH[which].value = String(Number(v.slice(0, 2)));
+    fM[which].value = String(Number(v.slice(3, 5)));
+  }
+  if (which === "end") fM.end.disabled = (fH.end.value === "");
+}
+fH.end.addEventListener("change", () => { fM.end.disabled = (fH.end.value === ""); });
+
+function refreshModalSchool() {
+  const wrap = document.getElementById("f-school-wrap");
+  const date = document.getElementById("f-date").value;
+  wrap.style.display = state.modalChild === "lou" ? "flex" : "none";
+  document.getElementById("f-school").checked = state.schoolDays.has(date);
+}
+function setModalChild(c) {
+  state.modalChild = c;
+  document.querySelectorAll(".seg-opt").forEach(b =>
+    b.classList.toggle("sel", b.dataset.child === c));
+  refreshModalSchool();
+}
+document.getElementById("f-date").addEventListener("change", refreshModalSchool);
+document.querySelectorAll(".seg-opt").forEach(b =>
+  b.addEventListener("click", () => setModalChild(b.dataset.child)));
+
+function openAdd(dateStr) {
+  state.editingId = null;
+  document.getElementById("modal-title").textContent = "Ajouter un créneau";
+  document.getElementById("f-date").value = dateStr || todayStr();
+  setFTime("start", "08:00");
+  setFTime("end", null);
+  document.getElementById("f-delete").style.display = "none";
+  document.getElementById("f-error").classList.remove("show");
+  setModalChild(state.modalChild);
+  modalBg.classList.add("open");
+}
+function openEdit(s) {
+  state.editingId = s.id;
+  document.getElementById("modal-title").textContent = "Corriger le créneau";
+  document.getElementById("f-date").value = s.date;
+  setFTime("start", s.start);
+  setFTime("end", s.end);
+  document.getElementById("f-delete").style.display = "block";
+  document.getElementById("f-error").classList.remove("show");
+  setModalChild(s.child);
+  modalBg.classList.add("open");
+}
+function closeModal() { modalBg.classList.remove("open"); }
+document.getElementById("f-cancel").addEventListener("click", closeModal);
+modalBg.addEventListener("click", e => { if (e.target === modalBg) closeModal(); });
+
+document.getElementById("f-save").addEventListener("click", async () => {
+  const date = document.getElementById("f-date").value;
+  const start = getFTime("start");
+  const end = getFTime("end");
+  const err = document.getElementById("f-error");
+  if (!date || !start) {
+    err.textContent = "La date et l'heure d'arrivée sont nécessaires.";
+    err.classList.add("show");
+    return;
+  }
+  if (end && toMin(end) <= toMin(start)) {
+    err.textContent = "L'heure de départ doit être après l'arrivée.";
+    err.classList.add("show");
+    return;
+  }
+  const data = { child: state.modalChild, date, start, end };
+
+  // jour d'école : mémoriser la case et découper autour de 8h35 / 16h30
+  const isSchool = state.modalChild === "lou" && document.getElementById("f-school").checked;
+  if (state.modalChild === "lou" && isSchool !== state.schoolDays.has(date)) {
+    await setSchoolDay(date, isSchool);
+  }
+  if (isSchool) {
+    const parts = splitAroundSchool(start, end);
+    if (!parts) {
+      err.textContent = "Ce créneau tombe entièrement pendant l'école (8h35 → 16h30).";
+      err.classList.add("show");
+      return;
+    }
+    if (state.editingId) await saveSession(state.editingId, { ...data, start: parts[0][0], end: parts[0][1] });
+    else await createSession({ ...data, start: parts[0][0], end: parts[0][1] });
+    for (let k = 1; k < parts.length; k++) {
+      await createSession({ ...data, start: parts[k][0], end: parts[k][1] });
+    }
+    closeModal();
+    toast(parts.length > 1 ? "Créneau enregistré, coupé pour l'école" : "Créneau enregistré");
+    return;
+  }
+
+  if (state.editingId) await saveSession(state.editingId, data);
+  else await createSession(data);
+  closeModal();
+  toast("Créneau enregistré");
+});
+
+document.getElementById("f-delete").addEventListener("click", async () => {
+  const s = state.sessions.find(x => x.id === state.editingId);
+  if (!s) return closeModal();
+  await removeSession(s.id);
+  closeModal();
+  if (pendingDelete) clearTimeout(pendingDelete.timer);
+  pendingDelete = { data: s, timer: setTimeout(() => { pendingDelete = null; hideToast(); }, 5000) };
+  toast("Créneau supprimé", true);
+});
+
+document.getElementById("add-today").addEventListener("click", () => openAdd(todayStr()));
+document.getElementById("add-week").addEventListener("click", () => openAdd(todayStr()));
+
+/* ============================ MODALE JOUR ============================ */
+const dayBg = document.getElementById("day-bg");
+let dayOpen = null;
+function openDay(dateStr) {
+  dayOpen = dateStr;
+  document.getElementById("day-title").textContent = fmtDateLong(dateStr);
+  document.getElementById("day-school").checked = state.schoolDays.has(dateStr);
+  const list = document.getElementById("day-sessions");
+  list.innerHTML = "";
+  const sess = sessionsOn(dateStr);
+  if (sess.length === 0) list.innerHTML = `<div class="empty-note">Aucun créneau ce jour</div>`;
+  for (const s of sess) {
+    const row = sessionRow(s);
+    row.addEventListener("click", () => dayBg.classList.remove("open"));
+    list.appendChild(row);
+  }
+  dayBg.classList.add("open");
+}
+document.getElementById("day-school").addEventListener("change", async e => {
+  if (!dayOpen) return;
+  await setSchoolDay(dayOpen, e.target.checked);
+  if (e.target.checked) {
+    const n = await applySchoolSplit(dayOpen);
+    if (n) toast(`${n} créneau${n > 1 ? "x" : ""} de Lou coupé${n > 1 ? "s" : ""} pour l'école`);
+  }
+  openDay(dayOpen);
+});
+document.getElementById("day-close").addEventListener("click", () => dayBg.classList.remove("open"));
+document.getElementById("day-add").addEventListener("click", () => {
+  dayBg.classList.remove("open");
+  openAdd(dayOpen);
+});
+dayBg.addEventListener("click", e => { if (e.target === dayBg) dayBg.classList.remove("open"); });
+
+/* ============================ TOAST ============================ */
+const toastEl = document.getElementById("toast");
+let toastTimer = null;
+function toast(msg, undo = false) {
+  document.getElementById("toast-msg").textContent = msg;
+  document.getElementById("toast-undo").style.display = undo ? "block" : "none";
+  toastEl.classList.add("show");
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(hideToast, undo ? 5000 : 2200);
+}
+function hideToast() { toastEl.classList.remove("show"); }
+document.getElementById("toast-undo").addEventListener("click", async () => {
+  if (pendingDelete) {
+    clearTimeout(pendingDelete.timer);
+    await restoreSession(pendingDelete.data);
+    pendingDelete = null;
+  }
+  hideToast();
+});
+
+/* ============================ ONGLETS ============================ */
+document.querySelectorAll(".tab-btn").forEach(b => {
+  b.addEventListener("click", () => {
+    state.tab = b.dataset.tab;
+    document.querySelectorAll(".tab-btn").forEach(x => x.classList.toggle("active", x === b));
+    document.querySelectorAll(".tabpage").forEach(p =>
+      p.classList.toggle("active", p.id === "page-" + state.tab));
+    render();
+  });
+});
+
+/* ============================ HORLOGE ============================ */
+setInterval(() => {
+  maybeAutoCap();
+  const hasLive = state.sessions.some(s => !s.end && s.date === todayStr())
+    || state.schoolDays.has(todayStr());
+  if (hasLive) render();
+}, 30000);
+
+render();
+</script>
+</body>
+</html>
