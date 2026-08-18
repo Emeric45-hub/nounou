@@ -40,6 +40,12 @@
   --shadow: none;
   --radius: 22px;
   --radius-sm: 14px;
+  /* Courbes : les easings CSS natifs sont trop mous. ease-in banni. */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --dur-press: 110ms;
+  --dur-fast: 180ms;
+  --dur: 240ms;
+  --dur-sheet: 340ms;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 html, body {
@@ -219,6 +225,8 @@ main { padding: 6px 18px 0; position: relative; z-index: 2; }
   text-transform: uppercase;
 }
 .child-today {
+  transform-origin: left center;
+  will-change: transform;
   font-family: 'Anton', sans-serif;
   font-size: 76px;
   line-height: 0.82;
@@ -248,10 +256,10 @@ main { padding: 6px 18px 0; position: relative; z-index: 2; }
   letter-spacing: 0.14em;
   text-transform: uppercase;
   cursor: pointer;
-  transition: transform 0.08s ease;
+  transition: transform var(--dur-press) var(--ease-out);
   color: #fff;
 }
-.punch-btn:active:not(:disabled) { transform: scale(0.97); }
+.punch-btn:active:not(:disabled) { transform: scale(0.98); }
 .punch-btn:disabled { opacity: 0.35; cursor: default; }
 .punch-card.lou .punch-btn { background: var(--lou); }
 .punch-card.rose .punch-btn { background: var(--rose); }
@@ -275,7 +283,28 @@ main { padding: 6px 18px 0; position: relative; z-index: 2; }
 .punch-card.lou .running-pill { color: var(--lou); }
 .punch-card.rose .running-pill { color: var(--rose); }
 @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.2; } }
-@media (prefers-reduced-motion: reduce) { .running-pill::before { animation: none; } }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* état de chargement : ne jamais afficher un faux 0 avant la synchro */
+body.loading .child-today { color: transparent; position: relative; }
+body.loading .child-today .unit { color: transparent; }
+body.loading .child-today::after {
+  content: '';
+  position: absolute;
+  left: 0; top: 8px; bottom: 14px;
+  width: 58%;
+  border-radius: 8px;
+  background: rgba(22,22,26,0.07);
+  animation: breathe 1.6s ease-in-out infinite;
+}
+body.loading .punch-btn { opacity: 0.4; pointer-events: none; }
+@keyframes breathe { 0%,100% { opacity: 1; } 50% { opacity: 0.45; } }
 
 /* ---------- LISTE CRÉNEAUX ---------- */
 .session-list { display: flex; flex-direction: column; gap: 2px; }
@@ -290,7 +319,13 @@ main { padding: 6px 18px 0; position: relative; z-index: 2; }
   gap: 12px;
   cursor: pointer;
 }
+.session-row {
+  transition: opacity var(--dur) var(--ease-out),
+              transform var(--dur) var(--ease-out),
+              background var(--dur-press) linear;
+}
 .session-row:active { background: var(--line-soft); }
+.session-row.enter { opacity: 0; transform: translateY(8px); }
 .session-chip { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
 .session-chip.lou { background: var(--lou); }
 .session-chip.rose { background: var(--rose); }
@@ -553,13 +588,24 @@ nav.tabs {
   position: fixed;
   inset: 0;
   background: rgba(22,22,26,0.4);
-  display: none;
+  display: flex;
   align-items: flex-end;
   justify-content: center;
   z-index: 50;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity var(--dur) var(--ease-out), visibility 0s linear var(--dur);
 }
-.modal-bg.open { display: flex; }
+.modal-bg.open {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transition: opacity var(--dur) var(--ease-out), visibility 0s;
+}
 .modal {
+  transform: translateY(100%);
+  transition: transform var(--dur-sheet) var(--ease-out);
   background: #fff;
   width: 100%;
   max-width: 640px;
@@ -568,6 +614,7 @@ nav.tabs {
   max-height: 86vh;
   overflow-y: auto;
 }
+.modal-bg.open .modal { transform: translateY(0); }
 .modal h2 {
   font-family: 'Anton', sans-serif;
   font-weight: 400;
@@ -697,7 +744,7 @@ nav.tabs {
   position: fixed;
   bottom: calc(100px + env(safe-area-inset-bottom));
   left: 50%;
-  transform: translateX(-50%) translateY(20px);
+  transform: translateX(-50%) translateY(16px) scale(0.96);
   background: var(--ink);
   color: #fff;
   padding: 12px 20px;
@@ -706,14 +753,14 @@ nav.tabs {
   font-weight: 500;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.25s, transform 0.25s;
+  transition: opacity var(--dur) var(--ease-out), transform var(--dur) var(--ease-out);
   z-index: 60;
   display: flex;
   gap: 16px;
   align-items: center;
   white-space: nowrap;
 }
-.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: auto; }
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); pointer-events: auto; }
 .toast button {
   background: none;
   border: none;
@@ -727,7 +774,7 @@ nav.tabs {
 }
 </style>
 </head>
-<body>
+<body class="loading">
 
 <div class="preview-banner">APERÇU · DONNÉES FICTIVES · RIEN N'EST ENREGISTRÉ</div>
 
@@ -965,7 +1012,24 @@ async function setSchoolDay(date, val) {
 }
 /* ==DATA-LAYER-END== */
 
+/* ---- MOUVEMENT ----
+   Règle : on n'anime que ce qui est déclenché par une action de l'utilisateur.
+   Le compteur se rafraîchit tout seul toutes les 30 s : ce rafraîchissement
+   n'est JAMAIS animé, sinon l'écran clignoterait en permanence. */
+const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+function bump(el) {
+  if (!el || reduceMotion.matches) return;
+  el.style.transition = "none";
+  el.style.transform = "scale(1.045)";
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    el.style.transition = "transform 320ms cubic-bezier(0.23, 1, 0.32, 1)";
+    el.style.transform = "scale(1)";
+  }));
+}
+const seenRows = new Set();
+
 function setSynced() {
+  document.body.classList.remove("loading");
   document.getElementById("sync").classList.add("on");
   document.getElementById("sync-txt").textContent = "synchronisé";
 }
@@ -1169,7 +1233,7 @@ function renderPointage() {
   const list = document.getElementById("today-sessions");
   const sess = sessionsOn(todayStr());
   list.innerHTML = "";
-  if (sess.length === 0) list.innerHTML = `<div class="empty-note">Aucun créneau aujourd'hui</div>`;
+  if (sess.length === 0) list.innerHTML = `<div class="empty-note">Touchez Arrivée pour démarrer la journée</div>`;
   for (const s of sess) list.appendChild(sessionRow(s));
 }
 
@@ -1185,6 +1249,11 @@ function sessionRow(s) {
     <span class="session-times">${name} · ${s.start}${end}</span>
     <span class="session-dur">${fmtDur(sessionMinutes(s))}</span>`;
   row.addEventListener("click", () => openEdit(s));
+  if (!seenRows.has(s.id) && !reduceMotion.matches) {
+    row.classList.add("enter");
+    requestAnimationFrame(() => requestAnimationFrame(() => row.classList.remove("enter")));
+  }
+  seenRows.add(s.id);
   return row;
 }
 
@@ -1305,6 +1374,7 @@ async function punch(child) {
   if (run) {
     const t = now5();
     await saveSession(run.id, { end: t });
+    bump(document.getElementById(child + "-today"));
     toast(`Départ de ${name} à ${t}`);
     return;
   }
@@ -1317,6 +1387,7 @@ async function punch(child) {
       if (!eveningDone) {
         const t = now5();
         await createSession({ child: "lou", date: todayStr(), start: SCHOOL_END, end: t });
+        bump(document.getElementById("lou-today"));
         toast(`Départ de Lou à ${t} (arrivée 16:30, sortie d'école)`);
         return;
       }
@@ -1325,6 +1396,7 @@ async function punch(child) {
 
   const t = now5();
   await createSession({ child, date: todayStr(), start: t, end: null });
+  bump(document.getElementById(child + "-today"));
   toast(`Arrivée de ${name} à ${t}`);
 }
 document.getElementById("lou-btn").addEventListener("click", () => punch("lou"));
