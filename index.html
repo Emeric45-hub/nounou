@@ -978,27 +978,94 @@ import {
   getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, setDoc,
   onSnapshot, query
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const sessionsCol = collection(db, "nounou", JOURNAL_ID, "sessions");
 const schoolCol = collection(db, "nounou", JOURNAL_ID, "schooldays");
 
-onSnapshot(query(sessionsCol), snap => {
-  state.sessions = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-  setSynced();
-  maybeAutoCap();
-  render();
-}, err => {
-  console.error("Firestore:", err);
-  document.getElementById("sync-txt").textContent = "erreur sync";
+function startSync() {
+  onSnapshot(query(sessionsCol), snap => {
+    state.sessions = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    setSynced();
+    maybeAutoCap();
+    render();
+  }, err => {
+    console.error("Firestore:", err);
+    document.getElementById("sync-txt").textContent = "erreur sync";
+  });
+  onSnapshot(query(schoolCol), snap => {
+    state.schoolDays = new Set(snap.docs.filter(d => d.data().school).map(d => d.id));
+    setSynced();
+    maybeAutoCap();
+    render();
+  });
+}
+/* ==CONNEXION== Compte famille (Firebase Auth). Les données ne se chargent
+   qu'une fois connecté ; la session reste ouverte sur l'appareil. */
+const auth = getAuth(app);
+const ecranConnexion = (() => {
+  const el = document.createElement("div");
+  el.id = "connexion";
+  el.setAttribute("role", "dialog");
+  el.setAttribute("aria-modal", "true");
+  el.setAttribute("aria-labelledby", "cx-titre");
+  el.innerHTML = `
+    <style>
+      #connexion { position: fixed; inset: 0; z-index: 9999; display: none; align-items: center; justify-content: center;
+        padding: 24px; background: #fff; font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif; color: #16161a; }
+      #connexion.ouvert { display: flex; }
+      #connexion form { width: 100%; max-width: 340px; display: flex; flex-direction: column; gap: 14px; }
+      #connexion h2 { margin: 0; font-size: 24px; font-weight: 700; }
+      #connexion p { margin: 0; font-size: 15px; color: #6e6e76; }
+      #connexion label { display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600; color: #3a3a40; }
+      #connexion input { font: inherit; font-size: 17px; padding: 12px 14px; border: 1px solid #d6d6dc; border-radius: 12px; background: #fff; color: #16161a; }
+      #connexion button { font: inherit; font-size: 17px; font-weight: 600; min-height: 48px; border: 0; border-radius: 12px; background: #16161a; color: #fff; }
+      #connexion button:disabled { opacity: 0.5; }
+      #cx-erreur { min-height: 20px; color: #c42b24; font-size: 14px; }
+    </style>
+    <form novalidate>
+      <h2 id="cx-titre">Connexion</h2>
+      <p>Compte famille, une seule fois sur cet appareil.</p>
+      <label>E-mail<input type="email" id="cx-email" autocomplete="username" autocapitalize="off" required></label>
+      <label>Mot de passe<input type="password" id="cx-mdp" autocomplete="current-password" required></label>
+      <button type="submit" id="cx-ok">Se connecter</button>
+      <div id="cx-erreur" role="alert"></div>
+    </form>`;
+  document.body.appendChild(el);
+  const messages = {
+    "auth/invalid-credential": "E-mail ou mot de passe incorrect.",
+    "auth/wrong-password": "E-mail ou mot de passe incorrect.",
+    "auth/user-not-found": "E-mail ou mot de passe incorrect.",
+    "auth/invalid-email": "Adresse e-mail invalide.",
+    "auth/too-many-requests": "Trop d'essais. Réessaie dans quelques minutes.",
+    "auth/network-request-failed": "Pas de connexion réseau."
+  };
+  el.querySelector("form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const bouton = el.querySelector("#cx-ok"), erreur = el.querySelector("#cx-erreur");
+    bouton.disabled = true; erreur.textContent = "";
+    try {
+      await signInWithEmailAndPassword(auth, el.querySelector("#cx-email").value.trim(), el.querySelector("#cx-mdp").value);
+    } catch (err) {
+      erreur.textContent = messages[err.code] || "Connexion impossible (" + (err.code || "erreur") + ").";
+    } finally {
+      bouton.disabled = false;
+    }
+  });
+  return {
+    ouvrir() { el.classList.add("ouvert"); },
+    fermer() { el.classList.remove("ouvert"); el.querySelector("#cx-mdp").value = ""; }
+  };
+})();
+let syncLancee = false;
+onAuthStateChanged(auth, (user) => {
+  if (!user) { ecranConnexion.ouvrir(); return; }
+  ecranConnexion.fermer();
+  if (!syncLancee) { syncLancee = true; startSync(); }
 });
-onSnapshot(query(schoolCol), snap => {
-  state.schoolDays = new Set(snap.docs.filter(d => d.data().school).map(d => d.id));
-  setSynced();
-  maybeAutoCap();
-  render();
-});
+/* ==CONNEXION-FIN== */
 
 async function createSession(data) { await addDoc(sessionsCol, data); }
 async function saveSession(id, data) { await updateDoc(doc(sessionsCol, id), data); }
